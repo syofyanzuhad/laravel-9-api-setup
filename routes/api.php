@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -16,4 +17,29 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
+});
+
+if (config('app.env') === 'local') {
+    usleep(800);
+}
+
+Route::post('login', [AuthController::class, 'login'])->name('auth.login');
+Route::post('refresh', [AuthController::class, 'refresh'])->name('auth.refresh');
+Route::post('password/forgot-password', [\App\Http\Controllers\Auth\ForgotPasswordController::class, 'sendResetLinkResponse'])->name('passwords.sent');
+Route::post('password/reset', [\App\Http\Controllers\Auth\ResetPasswordController::class, 'sendResetResponse'])->name('passwords.reset');
+
+Route::group([
+    'middleware' => 'auth:api',
+], function () {
+    Route::group([
+        'prefix' => 'user',
+        'as' => 'auth.',
+    ], function () {
+        Route::post('me', [AuthController::class, 'me'])->name('me');
+        Route::put('update', [AuthController::class, 'update'])->name('update');
+        Route::post('update-password', [AuthController::class, 'updatePassword'])->name('updatePassword');
+        Route::post('logout', [AuthController::class, 'logout'])->name('logout');
+    });
+
+
 });
