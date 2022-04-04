@@ -22,6 +22,13 @@ trait ApiResponser
             'message' => $data['message'] ?? null,
             'data' => $data['data'] ?? null,
         ];
+        if (isset($data['links'])) {
+            $responseStructure['links'] = $data['links'];
+        }
+        if (isset($data['meta'])) {
+            $responseStructure['meta'] = $data['meta'];
+        }
+
         if (isset($data['errors'])) {
             $responseStructure['errors'] = $data['errors'];
         }
@@ -108,6 +115,8 @@ trait ApiResponser
                 'status' => 'success',
                 'data' => $resourceCollection->response()->getData()->data,
                 'message' => $message,
+                'links' => $resourceCollection->response()->getData()->links ?? null,
+                'meta' => $resourceCollection->response()->getData()->meta ?? null,
             ],
             $statusCode,
             $headers
