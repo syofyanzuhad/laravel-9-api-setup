@@ -43,3 +43,13 @@ Route::group([
 
 
 });
+
+// not found fallback
+Route::fallback(function () {
+    return response()->json([
+        'success' => false,
+        'status' => 'not_found',
+        'message' => 'Route tidak ditemukan !',
+        'data' => null,
+    ], 404);
+});
