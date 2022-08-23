@@ -35,14 +35,11 @@ class ResetPasswordController extends Controller
     {
         //password.reset
         $input = $request->only('email', 'token', 'password', 'password_confirmation');
-        $validator = Validator::make($input, [
+        $request->validator([
             'token' => 'required',
-            'email' => 'required|email',
+            'email' => 'required|email|exists:users,email',
             'password' => 'required|confirmed|min:8',
         ]);
-        if ($validator->fails()) {
-            return response(['errors'=>$validator->errors()->all()], 422);
-        }
         $response = Password::reset($input, function ($user, $password) {
             $user->forceFill([
                 'password' => Hash::make($password),

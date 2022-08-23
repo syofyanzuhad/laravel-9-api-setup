@@ -43,12 +43,9 @@ class ForgotPasswordController extends Controller
     protected function sendResetLinkResponse(Request $request)
     {
         $input = $request->only('email');
-        $validator = Validator::make($input, [
-            'email' => 'required|email',
+        $request->validate([
+            'email' => 'required|email|exists:users,email',
         ]);
-        if ($validator->fails()) {
-            return $this->errorResponse(['errors'=>$validator->errors()->all()], 422);
-        }
         $response = Password::sendResetLink($input);
 
         switch ($response):
@@ -59,11 +56,11 @@ class ForgotPasswordController extends Controller
         case Password::INVALID_USER:
                 $message = 'Email tidak terdaftar.';
 
-        return $this->errorResponse(['errors'=>$message], 422);
+        return $this->errorResponse(['errors'=>$message]);
         default:
                 $message = 'Terjadi kesalahan, silakan coba beberapa saat lagi.';
 
-        return $this->errorResponse($message, 422);
+        return $this->errorResponse($message);
         endswitch;
         //$message = $response == Password::RESET_LINK_SENT ? 'Mail send successfully' : GLOBAL_SOMETHING_WANTS_TO_WRONG;
     }
