@@ -154,6 +154,7 @@ class Handler extends ExceptionHandler
         if (config('app.debug') && $statusCode != 422) {
             $response['file'] = method_exists($exception, 'getFile') ? $exception->getFile() : '';
             $response['code'] = method_exists($exception, 'getCode') ? $exception->getCode() : '';
+            $response['line'] = method_exists($exception, 'getLine') ? $exception->getLine() : '';
             $response['trace'] = method_exists($exception, 'getTrace') ? $exception->getTrace() : '';
         }
 
