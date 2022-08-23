@@ -52,15 +52,15 @@ class ResetPasswordController extends Controller
             case Password::PASSWORD_RESET:
                 $message = 'Password berhasil diubah';
 
-        return $this->successResponse($input['email'], $message);
+            return $this->successResponse($input['email'], $message);
         case Password::INVALID_USER:
                 $message = 'Email tidak ditemukan';
 
-        return $this->errorResponse($message);
+            return $this->errorResponse($message);
         default:
                 $message = 'Password gagal diubah';
 
-        return $this->errorResponse($message);
+            return $this->errorResponse($message);
         endswitch;
     }
 }

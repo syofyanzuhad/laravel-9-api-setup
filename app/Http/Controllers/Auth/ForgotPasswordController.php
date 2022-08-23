@@ -45,23 +45,20 @@ class ForgotPasswordController extends Controller
         $input = $request->only('email');
         $request->validate([
             'email' => 'required|email|exists:users,email',
+            'callback_url' => 'required|url'
         ]);
-        $response = Password::sendResetLink($input);
 
-        switch ($response):
-            case Password::RESET_LINK_SENT:
-                $message = 'Email berhasil dikirim, silakan cek email anda.';
-
-        return $this->successResponse($input, $message, 200);
-        case Password::INVALID_USER:
-                $message = 'Email tidak terdaftar.';
-
-        return $this->errorResponse(['errors'=>$message]);
-        default:
-                $message = 'Terjadi kesalahan, silakan coba beberapa saat lagi.';
-
-        return $this->errorResponse($message);
-        endswitch;
+        $user = \App\Models\User::where('email', $input['email'])->first();
+        try {
+            // send mail notification
+            $user->notify(new \App\Notifications\MailResetPasswordNotification(app('auth.password.broker')->createToken($user), $request->callback_url));
+    
+            return $this->successResponse([
+                'email' => $input['email'],
+            ], 'Email berhasil dikirim, silakan cek email anda.');
+        } catch (\Throwable $th) {
+            return $this->errorResponse($th->getMessage(), 500);
+        }
         //$message = $response == Password::RESET_LINK_SENT ? 'Mail send successfully' : GLOBAL_SOMETHING_WANTS_TO_WRONG;
     }
 
