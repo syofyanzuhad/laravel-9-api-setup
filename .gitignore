@@ -1,8 +1,10 @@
 /node_modules
 /public/hot
 /public/storage
+/public/docs
 /storage/*.key
 /vendor
+.scribe
 .env
 .env.backup
 .phpunit.result.cache
