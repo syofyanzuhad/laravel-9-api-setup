@@ -42,12 +42,6 @@ Route::group([
     });
 
     Route::apiResources([
-        'agama' => \App\Http\Controllers\AgamaController::class,
-        'pegawai' => \App\Http\Controllers\PegawaiController::class,
-        'pasien' => \App\Http\Controllers\PasienController::class,
-        // 'jenis-pelayanan' => \App\Http\Controllers\JenisPelayananController::class,
-        // 'sub-jenis-pelayanan' => \App\Http\Controllers\SubJenisPelayananController::class,
-        // 'sub-sub-jenis-pelayanan' => \App\Http\Controllers\SubSubJenisPelayananController::class,
     ]);
 });
 
