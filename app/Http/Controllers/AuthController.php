@@ -20,7 +20,7 @@ class AuthController extends Controller
     /**
      * Get the authenticated User.
      *
-     * @bodyParam username string required The user username. Example: admin
+     * @bodyParam email string required The user email. Example: admin
      * @bodyParam password string required Used to authenticate the user.
      *
      * @return JsonResponse
@@ -28,11 +28,11 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'username' => 'required|string|exists:users,username',
+            'email' => 'required|string|exists:users,email',
             'password' => 'required',
         ]);
 
-        $credentials = $request->only('username', 'password');
+        $credentials = $request->only('email', 'password');
 
         $expirationInMinutes = config('jwt.ttl');
         if ($request->remember_me == 'true') {
@@ -45,7 +45,7 @@ class AuthController extends Controller
 
         try {
             if (! $token = auth('api')->attempt($credentials)) {
-                return $this->errorResponse('Username atau password salah !');
+                return $this->errorResponse('email atau password salah !');
             }
         } catch (JWTException $e) {
             report($e);
@@ -78,7 +78,7 @@ class AuthController extends Controller
     //     // Santri::create([
     //     //     'id_santri' => strtoupper(Str::random(12)),
     //     //     'user_id' => $user->id,
-    //     //     'username' => substr($user->email, 0, strpos($user->email, '@')),
+    //     //     'email' => substr($user->email, 0, strpos($user->email, '@')),
     //     // ]);
 
     //     $token = JWTAuth::fromUser($user);
@@ -109,10 +109,22 @@ class AuthController extends Controller
             $newToken = auth('api')->refresh();
 
             return $this->successResponse(['token' => $newToken]);
+        }  catch (\PHPOpenSourceSaver\JWTAuth\Exceptions\TokenExpiredException $e) {
+            report($e);
+
+            return $this->errorResponse('Token kadaluwarsa !');
+        } catch (\PHPOpenSourceSaver\JWTAuth\Exceptions\TokenInvalidException $e) {
+            report($e);
+
+            return $this->errorResponse('Token tidak valid !');
+        } catch (\PHPOpenSourceSaver\JWTAuth\Exceptions\JWTException $e) {
+            report($e);
+
+            return $this->errorResponse('Token tidak ditemukan !', 404);
         } catch (\Throwable $th) {
             report($th);
 
-            return $this->errorResponse('Terjadi kesalahan !', 500);
+            return $this->errorResponse($th->getMessage(), 500);
         }
     }
 
@@ -138,7 +150,7 @@ class AuthController extends Controller
 
     /**
      * Get the authenticated User.
-     *
+     * @group Profile
      * @authenticated
      *
      * @return JsonResponse
@@ -163,12 +175,15 @@ class AuthController extends Controller
             return $this->errorResponse('Token tidak ditemukan !', 404);
         }
 
+        $user->load('detail', 'roles.permissions:id,name,guard_name');
+
         return $this->successResponse($user);
     }
 
     /**
      * Update authenticated User.
      *
+     * @group Profile
      * @authenticated
      *
      * @return JsonResponse
@@ -194,18 +209,29 @@ class AuthController extends Controller
         }
 
         $validated = $request->validate([
-            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'nama' => 'required|string|max:255',
-            'username' => 'required|alpha_num|max:255|unique:users,username,'.$user->id,
-            'email' => [
-                'required',
-                'email',
-                Rule::unique('users')->ignore($user->id),
-            ],
+            'nama' => 'required|string',
+            'nik' => 'required|numeric|unique:karyawan,nik,'.$user->detail->id,
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'jenis_kelamin' => 'required|in:L,P',
+            'tempat_lahir' => 'required|string',
+            'tanggal_lahir' => 'required|date',
+            'alamat_domisili' => 'required|string',
+            'alamat_ktp' => 'required|string',
+            'no_hp' => 'required|numeric',
+            'agama_id' => 'required|integer|exists:agama,id',
+            'pendidikan_terakhir_id' => 'required|integer|exists:pendidikan_terakhir,id',
+            'bank_id' => 'required|integer|exists:bank,id',
+            'no_rekening' => 'required|numeric',
         ]);
 
-        $user->update($validated);
-        $this->storeImage($request, $user, 'avatar', 'avatar');
+        $user->detail()->update($validated);
+        $karyawan = $user->detail;
+        if ($request->hasFile('foto')) {
+            $karyawan->addMediaFromRequest('foto')->toMediaCollection('avatar');
+            $karyawan->foto = $karyawan->getFirstMedia('avatar')->getUrl();
+            $karyawan->save();
+        }
+        $user->load('detail');
 
         return $this->successResponse(compact('user'), 'Update berhasil');
     }
@@ -213,6 +239,7 @@ class AuthController extends Controller
     /**
      * Update password of authenticated User.
      *
+     * @group Profile
      * @authenticated
      *
      * @bodyParam password string required The old password.
